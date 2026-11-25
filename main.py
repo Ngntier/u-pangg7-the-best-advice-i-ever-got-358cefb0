@@ -16,10 +16,18 @@ SENTENCE = (
 
 
 def validate(text: str) -> None:
-    if not text or text.strip() == "":
+    # Normalise first so a stray leading/trailing space can never
+    # slip into the gate checks; the sentence itself is unchanged.
+    text = text.strip()
+    if not text:
         raise ValueError("entry is empty")
     if len(text) > 200:
         raise ValueError(f"entry is {len(text)} chars, over the 200 limit")
+    # Byte budget is the real constraint at the sealed gate (the file is
+    # written as bytes), so check it directly too — for ASCII text this
+    # equals the char count, but it stays correct if the text ever changes.
+    if len(text.encode("utf-8")) > 200:
+        raise ValueError("entry exceeds the 200-byte budget")
     if "\n" in text or "\r" in text:
         raise ValueError("entry must be a single line")
     try:
